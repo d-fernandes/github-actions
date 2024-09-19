@@ -1,0 +1,40 @@
+name: "aws-cdk-destroy"
+description: "A composite action to destroy AWS CDK stacks. Built to run on ubuntu-latest."
+inputs:
+  AWS_ACCESS_KEY_ID:
+    description: "AWS Access Key ID"
+    required: true
+  AWS_SECRET_ACCESS_KEY:
+    description: "AWS Secret Access Key"
+    required: true
+  WORKING-DIRECTORY:
+    description: "The directory where CDK commands should be run"
+    required: false
+    default: "."  #root of the project
+runs:
+  using: "composite"
+  env:
+    AWS_ACCESS_KEY_ID: ${{ inputs.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+  steps:
+    - name: Check runner OS
+      run: |
+        if [ ${{ runner.os }} != 'Linux' ]; then
+          echo "This action must be run on ubuntu-latest or a Linux runner." >&2
+          exit 1
+        fi
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4.0.3
+      with:
+        node-version: '22.8.0'
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ${{ inputs.working-directory }}
+    - name: Bootstrap CDK (optional if already bootstrapped)
+      run: npx cdk bootstrap
+      working-directory: ${{ inputs.working-directory }}
+    - name: CDK Destroy
+      run: npx cdk destroy --all --force
+      working-directory: ${{ inputs.working-directory }}
