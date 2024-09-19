@@ -1,0 +1,30 @@
+name: "aws-cdk-deploy"
+description: "A composite action to deploy AWS CDK stacks"
+inputs:
+  AWS_ACCESS_KEY_ID:
+    description: "AWS Access Key ID"
+    required: true
+  AWS_SECRET_ACCESS_KEY:
+    description: "AWS Secret Access Key"
+    required: true
+runs:
+  using: "composite"
+  env:
+    AWS_ACCESS_KEY_ID: ${{ inputs.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4.0.3
+      with:
+        node-version: '18.x'
+    - name: Install dependencies
+      run: npm ci
+      working-directory: aws-cdk
+    - name: Bootstrap CDK (optional if already bootstrapped)
+      run: npx cdk bootstrap
+      working-directory: aws-cdk
+    - name: Deploy CDK
+      run: npx cdk deploy --all --require-approval never
+      working-directory: aws-cdk
